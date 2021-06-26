@@ -7,10 +7,9 @@ import (
 	"os"
 )
 
-// input: 和訳したい記事のURL, output: 和訳したい記事のhtml
-func httpRequest(url string) {
-	//for _, url := range os.Args[1:] {
-	resp, err := http.Get(url)
+// input: 和訳したい記事のURL, output: 和訳したい記事のhtmlファイル
+func httpRequest(url *string) []byte {
+	resp, err := http.Get(*url)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
 		os.Exit(1)
@@ -22,8 +21,8 @@ func httpRequest(url string) {
 		fmt.Fprintf(os.Stderr, "fetch: reading %s: %v\n", url, err)
 		os.Exit(1)
 	}
-	fmt.Printf("%s", b)
-	//}
+	//fmt.Printf("%s", b) // type of b is byte
+	return b
 
 }
 
@@ -37,8 +36,10 @@ func httpRequest(url string) {
 //func produceHtml()
 
 func main() {
-	httpRequest("https://news.crunchbase.com/news/what-this-years-seed-funding-tells-us-about-the-startup-future/")
+	//var url string = "https://news.crunchbase.com/news/what-this-years-seed-funding-tells-us-about-the-startup-future/"
+	var url string = "https://yorkn.info"
+	var txByte []byte = httpRequest(&url)
 
-	fmt.Printf("Hello\n")
-	fmt.Println("Hello")
+	fmt.Printf("%s", txByte)
+
 }
