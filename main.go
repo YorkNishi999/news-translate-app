@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -56,54 +58,64 @@ func parse(od DocTitleBody) DocTitleBody {
 	r = regexp.MustCompile(`\s{2}`)
 	od.body = r.ReplaceAllString(od.body, " ")
 
+	fmt.Println(od.body)
+
 	r = regexp.MustCompile(`– Crunchbase News`)
 	od.title = r.ReplaceAllString(od.title, "")
 
+	od.title = strings.Replace(od.title, " ", "%20", -1)
+	od.body = strings.Replace(od.title, " ", "%20", -1)
 	return od
 
 }
 
 // input: Strings, output: 和訳が含まれるJSON
-// 以下は適当に貼り付けしただけだから、Deeplのhttp reqの形に合わせて変更する
-func HttpPost(url, token, device string) error {
-	url =
-	values := url.Values{}
-	values.Set("token", token)
-	values.Add("device", device)
+func deeplPost(sentences string) string {
 
-	req, err := http.NewRequest(
-			"POST",
-			url,
-			strings.NewReader(values.Encode()),
-	)
-	if err != nil {
-			return err
-	}
-
-	// Content-Type 設定
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	url := "https://api-free.deepl.com/v2/translate?auth_key=a0474d62-bbcf-5b7d-c298-da9bbac4ecdd:fx&text=" + sentences + "&target_lang=JA"
+	method := "POST"
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-			return err
-	}
-	defer resp.Body.Close()
+	req, err := http.NewRequest(method, url, nil)
 
-	return err
+	if err != nil {
+		fmt.Println(err)
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("ここよ" + string(body))
+	return string(body)
+}
+
+func spritBody(bc string) []string {
+	var sslice []string = strings.Split(bc, ".")
+	return sslice
 }
 
 // input: 和訳が含まれるJSON、output: htmlファイル
 //func produceHtml()
 
 func main() {
-	var url string = "https://news.crunchbase.com/news/what-this-years-seed-funding-tells-us-about-the-startup-future/"
+	var url string = "https://news.crunchbase.com/news/when-90-is-young-what-a-moonshot-vc-thinks-about-radical-longevity/"
 	//var url string = "https://yorkn.info"
 	var od DocTitleBody = getDocument(&url)
 	od = parse(od)
+	var td DocTitleBody // 翻訳後のtitle, body
 
-	//var body string = parse(txByte)
 	fmt.Printf("title is %s\n", od.title)
-	fmt.Printf("body is %s\n", od.body)
+	fmt.Printf("body is %s\n", td.title)
+
+	td.title = deeplPost(od.title)
+
+	fmt.Println(td.title)
+	//td.body = deeplPost(od.body)
 
 }
